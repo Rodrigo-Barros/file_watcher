@@ -70,30 +70,30 @@ file_backup()
                 debug "Diferenças foram encontradas movendo o arquivo temporário para a pasta de backups" $DEBUG_INFO
                 mv "$TEMP_FOLDER/$file_temp" "$BACKUP_FOLDER/$file_temp"
             fi
-        else
-            backup_file=$(echo $file_src | sed "s|$file_dir|$BACKUP_FOLDER|" | sed -r "s|/|\\\\|g")
-            debug "Arquivo não tem versão anterior provalvelmente não foi aberto antes de iniciar o serviço" $DEBUG_INFO
-            debug "Tentando buscar diferenças com o ultimo arquivo disponivel na pasta de backups" $DEBUG_INFO
-            backup_file_last=$(ls $BACKUP_FOLDER | grep -F "$backup_file" | tail -n 1)
+        # else
+        #     backup_file=$(echo $file_src | sed "s|$file_dir|$BACKUP_FOLDER|" | sed -r "s|/|\\\\|g")
+        #     debug "Arquivo não tem versão anterior provalvelmente não foi aberto antes de iniciar o serviço" $DEBUG_INFO
+        #     debug "Tentando buscar diferenças com o ultimo arquivo disponivel na pasta de backups" $DEBUG_INFO
+        #     backup_file_last=$(ls $BACKUP_FOLDER | grep -F "$backup_file" | tail -n 1)
 
-            if [ "$backup_file_last" != "" ];then
+        #     if [ "$backup_file_last" != "" ];then
 
-                diff "$file_src" "$BACKUP_FOLDER/$backup_file_last" > /dev/null
-                if [ $? -eq 0 ];then
-                    debug "Nenhuma diferença foi encontrada" $DEBUG_INFO
-                else
-                    debug "bf:Diferenças foram encontradas movendo o arquivo temporário para a pasta de backups" $DEBUG_INFO
-                    cp "$BACKUP_FOLDER/$backup_file_last" "$file_dest"
-                fi
-            else
-                file_dest=$(echo $file_dest | sed "s|$TEMP_FOLDER|$BACKUP_FOLDER|")
-                debug "nenhum arquivo de backup foi encontrado provalvelmente foi a criação do arquivo" $DEBUG_INFO
-                if [[ $file_dest == *.default ]];then
-                    cp "$file_src" "$BACKUP_FOLDER/$(basename $file_src)"
-                else
-                    cp "$file_src" "$file_dest"
-                fi
-            fi
+        #         diff "$file_src" "$BACKUP_FOLDER/$backup_file_last" > /dev/null
+        #         if [ $? -eq 0 ];then
+        #             debug "Nenhuma diferença foi encontrada" $DEBUG_INFO
+        #         else
+        #             debug "bf:Diferenças foram encontradas movendo o arquivo temporário para a pasta de backups" $DEBUG_INFO
+        #             cp "$BACKUP_FOLDER/$backup_file_last" "$file_dest"
+        #         fi
+        #     else
+        #         file_dest=$(echo $file_dest | sed "s|$TEMP_FOLDER|$BACKUP_FOLDER|")
+        #         debug "nenhum arquivo de backup foi encontrado provalvelmente foi a criação do arquivo" $DEBUG_INFO
+        #         if [[ $file_dest == *.default ]];then
+        #             cp "$file_src" "$BACKUP_FOLDER/$(basename $file_src)"
+        #         else
+        #             cp "$file_src" "$file_dest"
+        #         fi
+        #     fi
         fi
 
     fi
@@ -159,30 +159,33 @@ file_save()
 
 file_restore()
 {
-    echo $BACKUP_FOLDER
     if [ ! -d $BACKUP_FOLDER ];then
         echo "A pasta de backup não existe"
         exit 1
     fi
 
     local file_dir=$(dirname $@)
-    local file=$(basename $@ | cut -d '_' -f1)
-    local new_file=$(echo $@ | sed 's|/|\\|g')
+    local file_src=$(basename $@ | cut -d '_' -f1)
+    local file_dest=$(echo $@ | sed 's|/|\\|g')
+    local file_name=$(echo $file_src | sed 's|.default||g')
 
-    for path in $PATHS_WATCH;do
-        canonical_path=$(readlink -f $path) 
+    local file_backup_default="$BACKUP_FOLDER/$(echo $file_dir/$file_src | sed 's|/|\\|g' | sed 's|.default||').default" 
+    local file_backup="$BACKUP_FOLDER/$file_dest"
 
-        if [[ $(echo $file_dir | grep $canonical_path ) ]] then
-            # verifica se o arquivo existe
-            if [[ -f "$file_dir/$file" && $file != *.default ]];then
-                mv "$file_dir/$file" "$file_dir/$file.default"
-                cp "$BACKUP_FOLDER/$new_file" "$file_dir/$file"
-            else
-                echo mv "$file_dir/$file" "$file_dir/$(echo $file | sed 's|.default||')"
-            fi
-            
-        fi
-    done
+    echo
+
+    if [[ ! -f $file_backup_default ]];then
+        cp "$file_dir/$file_name" "$file_backup_default"
+    fi
+
+
+    if [[ "$file_src" != *.default ]];then
+        rm "$file_dir/$file_src"
+        cp "$file_backup" "$file_dir/$file_src"
+    else
+        rm "$file_dir/$file_name"
+            cp "$file_backup_default" "$file_dir/$file_name" 
+    fi
 
     exit $?
 }
