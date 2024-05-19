@@ -163,6 +163,9 @@ file_restore()
         echo "A pasta de backup não existe"
         exit 1
     fi
+    # cria uma trava no loop de eventos para não detectar uma restauraçã como uma alteração
+    # e realizar uma cópia desnecessária
+    touch "$TEMP_FOLDER/.stop"
 
     local file_dir=$(dirname $@)
     local file_src=$(basename $@ | cut -d '_' -f1)
@@ -186,6 +189,8 @@ file_restore()
         rm "$file_dir/$file_name"
             cp "$file_backup_default" "$file_dir/$file_name" 
     fi
+
+    rm "$TEMP_FOLDER/.stop"
 
     exit $?
 }
@@ -211,6 +216,11 @@ service_start()
     inotifywait -m -r --format '%e %w%f' $PATHS_WATCH --exclude $PATHS_EXCLUDE $EVENTSFILTER  | while read event file; do
         case $ALGO in
             bash) 
+
+                if [ -f "$TEMP_FOLDER/.stop" ];then
+                    debug "BACKUP EM PROGRESSO IGNORANDO PRÓXIMOS EVENTOS..." $DEBUG_INFO
+                    continue
+                fi
                 debug "EVENT: $event" $DEBUG_EVENT
                 
                 # condição necessária para funcionar com o vim 
