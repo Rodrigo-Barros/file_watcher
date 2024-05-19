@@ -1,0 +1,4 @@
+CREATE teste.php
+OPEN teste.php
+MODIFY teste.php
+CLOSE_WRITE,CLOSE teste.php
