@@ -1,4 +1,0 @@
-OPEN teste.php
-CLOSE_NOWRITE,CLOSE teste.php
-OPEN teste.php
-CLOSE_WRITE,CLOSE teste.php

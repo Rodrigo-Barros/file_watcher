@@ -1,5 +1,0 @@
-CREATE teste.php
-OPEN teste.php
-ATTRIB teste.php
-ATTRIB teste.php
-CLOSE_WRITE,CLOSE teste.php
