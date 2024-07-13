@@ -15,12 +15,16 @@ clean()
 debug()
 {
     local message="$1"
-    local level="$2"
+    local level=${2:-$DEBUG_INFO}
+    
+    if [[ $(echo $2 | grep -E "[a-zA-Z]") ]];then
+        level=$(echo $@ | cut -d ' ' -f$(echo $@ | wc -w))
+    fi
+
     if [ ! -z $DEBUG  ];then
-        if [ "$DEBUG" -ge "$level" ];then
+        if [ $DEBUG -ge $level ];then
             echo $message
         fi
-        
     fi
 }
 
@@ -43,7 +47,7 @@ file_temp()
         cp "$file_src" "$file_dest"
         EVENTTYPE="COPY"
     else
-        debug "arquivo $(basename $file) já existe pulando backup" $DEBUG_INFO
+        debug "arquivo $(basename $file) já existe pulando backup"
     fi
 }
 
@@ -119,7 +123,7 @@ file_open()
 
         if [[ "${EVENTS[@]}" = "$events" ]];then
             if [ ! -f "$(file_mktmp $file)" ];then 
-                debug "arquivo $file aberto" $DEBUG_INFO 
+                debug "arquivo $file aberto" 
                 file_temp "$file"
             fi
             EVENTS=()
@@ -148,7 +152,6 @@ file_save()
         fi
 
         if [[ "${EVENTS[@]}" = "$events" ]];then
-            debug "arquivo $file salvo" $DEBUG_INFO
             file_backup "$file"
             # EVENTTYPE="SAVE"
             EVENTS=()
@@ -159,13 +162,19 @@ file_save()
 
 file_restore()
 {
+    if [ $# -eq 0 ];then
+        echo "Você precisa informar um arquivo para restaurar"
+        exit 1;
+    fi
+    
     if [ ! -d $BACKUP_FOLDER ];then
         echo "A pasta de backup não existe"
         exit 1
     fi
-    # cria uma trava no loop de eventos para não detectar uma restauraçã como uma alteração
+    # cria uma trava no loop de eventos para não detectar uma restauração como uma alteração
     # e realizar uma cópia desnecessária
-    touch "$TEMP_FOLDER/.stop"
+    
+    [ -f $TEMP_FOLDER/.stop ] && touch "$TEMP_FOLDER/.stop"
 
     local file_dir=$(dirname $@)
     local file_src=$(basename $@ | cut -d '_' -f1)
@@ -174,8 +183,6 @@ file_restore()
 
     local file_backup_default="$BACKUP_FOLDER/$(echo $file_dir/$file_src | sed 's|/|\\|g' | sed 's|.default||').default" 
     local file_backup="$BACKUP_FOLDER/$file_dest"
-
-    echo
 
     if [[ ! -f $file_backup_default ]];then
         cp "$file_dir/$file_name" "$file_backup_default"
@@ -197,10 +204,10 @@ file_restore()
 
 service_bootstrap()
 {
-    debug "TEMP_FOLDER:$(readlink -f $TEMP_FOLDER)" $DEBUG_INFO 
-    debug "BACKUP_FOLDER:$(readlink -f $BACKUP_FOLDER)" $DEBUG_INFO
-    debug "PATHS_WATCH: $(readlink -f $PATHS_WATCH)" $DEBUG_INFO
-    debug "---" $DEBUG_INFO
+    debug "TEMP_FOLDER:$(readlink -f $TEMP_FOLDER)" 
+    debug "BACKUP_FOLDER:$(readlink -f $BACKUP_FOLDER)"
+    debug "PATHS_WATCH: $(readlink -f $PATHS_WATCH)"
+    debug "---"
 
     mkdir -p $TEMP_FOLDER $BACKUP_FOLDER
     trap service_teardown EXIT
@@ -236,8 +243,8 @@ service_start()
                     file_save "$event" "$(readlink -f $file)"
                     file_open "$event" "$(readlink -f $file)"
                     
-                    # debug "EVENTS: ${EVENTS[@]}" "$DEBUG_EVENT"
-                    # debug "EVENTTYPE: ${EVENTTYPE}" "$DEBUG_EVENT"
+                    debug "EVENTS: ${EVENTS[@]}" $DEBUG_EVENT
+                    debug "EVENTTYPE: ${EVENTTYPE}" $DEBUG_EVENT
                 else
                     EVENTTYPE=""
                 fi
