@@ -2,11 +2,15 @@
 
 Você já precisou de uma cópia de um arquivo e não encontrou? pensando nisso eu escrevi esse script que faz copias a cada modificação relevante que houver no arquivo.
 
+## Dependencias
+- inotify-tools
+
 ## Configurando
 
-1. O primeiro passo é alterar o valor da variável presente no arquivo 'constants.sh':
+1. O primeiro passo é alterar o valor da variável presente no arquivo 'constants.sample':
     1. Altere o valor de 'BACKUP_FOLDER' para o local onde você deseja armazenar suas versões do backup_files.
     2. O segundo importante alterar o valor de 'PATHS_WATCH' para as pastas onde você quer procurar alterações de seus arquivos. Você pode separar por espaços para monitorar várias pastas: 'PATHS_WATCH="/home/user1/folder_to_look /srv/site1"'
+2. Após realizadas as alterações renomeie o arquivo `constants.sample` para `constants.sh`
 
 ## Inicando o serviço
 Após configurar chegou a hora monitorar as alterações dos arquivos. Para iniciar o monitoramento dos arquivos basta executar o seguinte comando:
