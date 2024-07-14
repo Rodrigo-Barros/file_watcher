@@ -154,9 +154,49 @@ file_save()
         if [[ "${EVENTS[@]}" = "$events" ]];then
             file_backup "$file"
             # EVENTTYPE="SAVE"
+            EVENTTYPE=""
             EVENTS=()
         fi
+    fi
+}
 
+# Detectado modificados via UPLOAD 
+# Nota: O Teste foi realizado utilizado vscode como editor
+# possivelmente o conjunto de eventos mude utilizando um outro editor
+file_upload()
+{
+    local event="$1"
+    local file="$2"
+    local events="OPEN MODIFY MODIFY CLOSE_WRITE,CLOSE"
+    local total_events=$(echo $events | wc -w)
+    local length=${#EVENTS[@]}
+    length=$(expr $length + 1)
+    local current_word=$(echo $events | cut -d ' ' -f$length)
+
+
+    if [ "$EVENTTYPE" = "OPEN_UPLOAD" -o "$EVENTTYPE" = "" ];then
+        
+        if [ "$event" = "$current_word" ];then
+            EVENTS+=($current_word)
+
+            if [ $length -eq 2 -a $current_word = "$(echo $events | cut -d ' ' -f2 )" ];then
+                EVENTTYPE="OPEN_UPLOAD"
+            fi
+        fi
+
+        if [[ "${EVENTS[@]}" = "$events" ]];then
+            # file_backup "$file"
+            #TODO: ELABORAR FUNÇÃO PARA REALIZAR A COMPARAÇÂO DO ARQUIVO ATUAL COM O ULTIMO
+            # ARQUIVO DE BACKUP DISPONÍVEL E SOMENTE SE AMBOS OS ARQUIVOS FOREM DIFERENÇAS 
+            # REALIZAR O BACKUP 
+            # echo ARQUIVO MODIFICADO VIA UPLOAD
+            # file_backup $file
+        fi
+
+        if [ $length -eq $total_events ];then
+            EVENTTYPE=""
+            EVENTS=()
+        fi
     fi
 }
 
@@ -181,7 +221,7 @@ file_restore()
     local file_dest=$(echo $@ | sed 's|/|\\|g')
     local file_name=$(echo $file_src | sed 's|.default||g')
 
-    local file_backup_default="$BACKUP_FOLDER/$(echo $file_dir/$file_src | sed 's|/|\\|g' | sed 's|.default||').default" 
+    local file_backup_default="$BACKUP_FOLDER/$(echo $file_dir/$file_src | sed 's|/|\\|g' | sed 's|.default||').default"
     local file_backup="$BACKUP_FOLDER/$file_dest"
 
     if [[ ! -f $file_backup_default ]];then
@@ -197,7 +237,7 @@ file_restore()
             cp "$file_backup_default" "$file_dir/$file_name" 
     fi
 
-    rm "$TEMP_FOLDER/.stop"
+    [ -f $TEMP_FOLDER/.stop ] && rm "$TEMP_FOLDER/.stop"
 
     exit $?
 }
@@ -228,7 +268,7 @@ service_start()
                     debug "BACKUP EM PROGRESSO IGNORANDO PRÓXIMOS EVENTOS..." $DEBUG_INFO
                     continue
                 fi
-                debug "EVENT: $event" $DEBUG_EVENT
+                # debug "EVENT: $event" $DEBUG_EVENT
                 
                 # condição necessária para funcionar com o vim 
                 if [ "$EVENTTYPE" = "SAVE" -a "$event" = "OPEN" ];then
@@ -239,12 +279,13 @@ service_start()
 
                 if [ "$file" != "" -a "$EVENTTYPE" != "COPY" ];then
 
-
                     file_save "$event" "$(readlink -f $file)"
+                    file_upload "$event" "$(readlink -f $file)"
                     file_open "$event" "$(readlink -f $file)"
-                    
-                    debug "EVENTS: ${EVENTS[@]}" $DEBUG_EVENT
-                    debug "EVENTTYPE: ${EVENTTYPE}" $DEBUG_EVENT
+
+                    eventos=${EVENTS[@]}
+                    debug "EVENTS: $eventos" $DEBUG_EVENT 
+                    # debug "EVENTTYPE: ${EVENTTYPE}" $DEBUG_EVENT
                 else
                     EVENTTYPE=""
                 fi
