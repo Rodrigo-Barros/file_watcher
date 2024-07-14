@@ -28,6 +28,14 @@ debug()
     fi
 }
 
+deduplicate_files()
+{
+    while true;do
+        sleep $DEDUPLICATE_LOOP_TIME
+        rdfind -deleteduplicates true $BACKUP_FOLDER
+    done
+}
+
 # cria o arquivo temporario com as barras no padrão do windows
 file_mktmp()
 {
@@ -213,7 +221,8 @@ file_restore()
     # cria uma trava no loop de eventos para não detectar uma restauração como uma alteração
     # e realizar uma cópia desnecessária
 
-    [ -f $TEMP_FOLDER/.stop ] && touch "$TEMP_FOLDER/.stop"
+    [ -f $TEMP_FOLDER/.stop ] && echo "ERROR: Existe um backup em progresso" && exit 1
+    [ ! -f $TEMP_FOLDER/.stop ] && touch $TEMP_FOLDER/.stop
 
     local file_dir=$(dirname $@)
     local file_src=$(basename $@ | cut -d '_' -f1)
@@ -260,6 +269,9 @@ service_start()
     EVENTSFILTER="-e create -e open -e modify -e close_write -e close_nowrite"
     EVENTS=()
     EVENTTYPE=""
+    if which rdfind > /dev/null;then
+        deduplicate_files &
+    fi
     inotifywait -m -r --format '%e %w%f' $PATHS_WATCH --exclude $PATHS_EXCLUDE $EVENTSFILTER  | while read event file; do
         case $ALGO in
             bash)
@@ -268,7 +280,6 @@ service_start()
                     debug "BACKUP EM PROGRESSO IGNORANDO PRÓXIMOS EVENTOS..." $DEBUG_INFO
                     continue
                 fi
-                # debug "EVENT: $event" $DEBUG_EVENT
 
                 # condição necessária para funcionar com o vim
                 if [ "$EVENTTYPE" = "SAVE" -a "$event" = "OPEN" ];then
@@ -285,7 +296,7 @@ service_start()
 
                     eventos=${EVENTS[@]}
                     debug "EVENTS: $eventos" $DEBUG_EVENT
-                    # debug "EVENTTYPE: ${EVENTTYPE}" $DEBUG_EVENT
+                    debug "EVENTTYPE: ${EVENTTYPE}" $DEBUG_EVENT
                 else
                     EVENTTYPE=""
                 fi

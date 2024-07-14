@@ -4,6 +4,7 @@ TEMP_FOLDER="/tmp/file_watcher"
 BACKUP_FOLDER="/mnt/backup"
 BACKUP_FILE_NAME_SUFFIX="%d_%m_%Y_%H%M%S"
 ALGO=bash
+DEDUPLICATE_LOOP_TIME=120
 
 DEBUG_INFO=1
 

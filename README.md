@@ -4,6 +4,7 @@ Você já precisou de uma cópia de um arquivo e não encontrou? pensando nisso 
 
 ## Dependencias
 - inotify-tools
+- rdfind (opcional) faz a desduplicação de arquivos similares
 
 ## Configurando
 
