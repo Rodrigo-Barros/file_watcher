@@ -5,6 +5,11 @@ Você já precisou de uma cópia de um arquivo e não encontrou? pensando nisso 
 ## Dependencias
 - inotify-tools
 - rdfind (opcional) faz a desduplicação de arquivos similares
+- linux
+
+## Instalação
+1. atribua as permissões de execução ao arquivo install.sh: `chmod +x install.sh`
+2. execute o instalador: `./install.sh`
 
 ## Configurando
 
@@ -17,7 +22,7 @@ Você já precisou de uma cópia de um arquivo e não encontrou? pensando nisso 
 Após configurar chegou a hora monitorar as alterações dos arquivos. Para iniciar o monitoramento dos arquivos basta executar o seguinte comando:
 > bash file_watcher.sh --service
 
-isso inicia o serviço e quando forem feitas alterações nos arquivos as cópias começaram a serem realizadas para pasta indicada no arquivo constansts.sh 
+isso inicia o serviço e quando forem feitas alterações nos arquivos as cópias começaram a serem realizadas para pasta indicada no arquivo constansts.sh
 
 ## Restaurando uma versão especifica
 Para restaurar uma versão do seu arquivo utilize o seguinte commando:
